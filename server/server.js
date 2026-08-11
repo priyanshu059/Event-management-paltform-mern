@@ -34,9 +34,9 @@ import intelligenceRoutes from './routes/intelligenceRoutes.js';
 const app = express();
 
 // ---- Middleware ----
-// Allow requests from our React frontend (running on port 5173)
+const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: allowedOrigin,
   credentials: true,
 }));
 
@@ -48,25 +48,28 @@ connectDB();
 
 // ---- Register API Routes ----
 // Each route file handles a specific part of the API
-app.use('/api/auth', authRoutes);
-app.use('/api/events', eventRoutes);
-app.use('/api/registrations', registrationRoutes);
-app.use('/api/venues', venueRoutes);
-app.use('/api/speakers', speakerRoutes);
-app.use('/api/sponsorships', sponsorshipRoutes);
-app.use('/api/incidents', incidentRoutes);
-app.use('/api/notifications', notificationRoutes);
-app.use('/api/feedback', feedbackRoutes);
-app.use('/api/dashboard', dashboardRoutes);
-app.use('/api/assistant', assistantRoutes);
-app.use('/api/intelligence', intelligenceRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/events', eventRoutes);
+app.use('/api/v1/registrations', registrationRoutes);
+app.use('/api/v1/venues', venueRoutes);
+app.use('/api/v1/speakers', speakerRoutes);
+app.use('/api/v1/sponsorships', sponsorshipRoutes);
+app.use('/api/v1/incidents', incidentRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/feedback', feedbackRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/assistant', assistantRoutes);
+app.use('/api/v1/intelligence', intelligenceRoutes);
+
+// JSON 404 for any unmatched /api/v1/... route
+app.all('/api/*', (req, res) => {
+  res.status(404).json({ message: `API route not found: ${req.method} ${req.originalUrl}` });
+});
 
 // ---- Global Error Handler ----
-// This catches any errors thrown in our routes
 app.use(errorHandler);
 
 // ---- Start Reminder Scheduler ----
-// This runs every minute to send reminder notifications
 startReminderScheduler();
 
 // ---- Start Server ----
