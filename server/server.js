@@ -34,9 +34,24 @@ import intelligenceRoutes from './routes/intelligenceRoutes.js';
 const app = express();
 
 // ---- Middleware ----
-const allowedOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL,
+];
+
 app.use(cors({
-  origin: allowedOrigin,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost, the exact CLIENT_URL, or any Vercel preview URL
+    if (allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    // Reject everything else
+    return callback(new Error('Blocked by CORS policy'), false);
+  },
   credentials: true,
 }));
 
