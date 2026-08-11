@@ -19,11 +19,13 @@ export const getDashboardStats = async (req, res) => {
         Incident.countDocuments({ status: 'Open' }),
       ]);
 
-    // Get upcoming events (date >= today)
-    const upcomingEvents = await Event.find({ date: { $gte: new Date() } })
+    // ✅ Fixed: Event.date is stored as a String ("2026-09-15"), so MongoDB $gte: new Date()
+    // never matches (different BSON types). Fetch all and filter in JS instead.
+    const allEvents = await Event.find()
       .sort({ date: 1 })
-      .limit(5)
       .select('title date location status');
+    const today = new Date().toISOString().split('T')[0]; // "2026-08-11"
+    const upcomingEvents = allEvents.filter(e => e.date >= today).slice(0, 5);
 
     // Get recent registrations
     const recentRegistrations = await Registration.find()

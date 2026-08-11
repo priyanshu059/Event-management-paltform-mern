@@ -2,6 +2,7 @@
 // controllers/feedbackController.js - Feedback CRUD
 // ============================================================
 import Feedback from '../models/Feedback.js';
+import Registration from '../models/Registration.js';
 
 // GET /api/feedback/my - Get current user's own feedback
 export const getMyFeedback = async (req, res) => {
@@ -21,9 +22,22 @@ export const updateFeedback = async (req, res) => {
     if (fb.user.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Not authorised' });
     }
-    const updated = await Feedback.findByIdAndUpdate(req.params.id, req.body, { new: true });
+
+    // ✅ Fixed: explicit allow-list prevents users from reassigning event/user via req.body
+    const allowedUpdates = {};
+    if (req.body.rating !== undefined) allowedUpdates.rating = req.body.rating;
+    if (req.body.comment !== undefined) allowedUpdates.comment = req.body.comment;
+
+    const updated = await Feedback.findByIdAndUpdate(
+      req.params.id,
+      allowedUpdates,
+      { new: true, runValidators: true }  // ✅ Fixed: runValidators catches invalid enum values
+    );
     res.json(updated);
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) {
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const getFeedbackForEvent = async (req, res) => {
@@ -45,17 +59,35 @@ export const getAllFeedback = async (req, res) => {
 
 export const createFeedback = async (req, res) => {
   try {
-    // Support both eventId (from form) and event (direct) field names
     const eventId = req.body.eventId || req.body.event;
     if (!eventId) return res.status(400).json({ message: 'eventId is required' });
+
+    // ✅ Fixed: check user has a valid registration before allowing feedback
+    const registration = await Registration.findOne({
+      event: eventId,
+      user: req.user._id,
+      status: 'registered',
+    });
+    if (!registration) {
+      return res.status(403).json({ message: 'You must be registered for this event to leave feedback' });
+    }
 
     // Check if user already submitted feedback for this event
     const existing = await Feedback.findOne({ event: eventId, user: req.user._id });
     if (existing) return res.status(400).json({ message: 'You already submitted feedback for this event' });
 
-    const feedback = await Feedback.create({ ...req.body, event: eventId, user: req.user._id });
+    // ✅ Fixed: explicit allow-list — user cannot inject arbitrary fields
+    const feedback = await Feedback.create({
+      event: eventId,
+      user: req.user._id,
+      rating: req.body.rating,
+      comment: req.body.comment,
+    });
     res.status(201).json(feedback);
-  } catch (error) { res.status(500).json({ message: error.message }); }
+  } catch (error) {
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const deleteFeedback = async (req, res) => {

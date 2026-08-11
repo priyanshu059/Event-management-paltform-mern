@@ -28,11 +28,18 @@ export const createNotification = async (req, res) => {
 
 export const markAsRead = async (req, res) => {
   try {
-    const notif = await Notification.findByIdAndUpdate(
-      req.params.id,
-      { isRead: true },
-      { new: true }
-    );
+    const notif = await Notification.findById(req.params.id);
+    if (!notif) return res.status(404).json({ message: 'Notification not found' });
+
+    // ✅ Fixed: only owner or admin can mark as read
+    const isOwner = notif.user?.toString() === req.user._id.toString();
+    const isAdmin = req.user.role === 'admin';
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorised to update this notification' });
+    }
+
+    notif.isRead = true;
+    await notif.save();
     res.json(notif);
   } catch (error) { res.status(500).json({ message: error.message }); }
 };

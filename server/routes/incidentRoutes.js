@@ -7,7 +7,7 @@ import { adminOnly } from '../middleware/roleMiddleware.js';
 const router = express.Router();
 
 router.get('/', protect, adminOnly, getIncidents);
-router.get('/:id', protect, getIncidentById);
+router.get('/:id', protect, adminOnly, getIncidentById);
 router.post('/', protect, createIncident);
 router.put('/:id', protect, adminOnly, updateIncident);
 router.delete('/:id', protect, adminOnly, deleteIncident);

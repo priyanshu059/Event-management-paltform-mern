@@ -1,14 +1,29 @@
 // src/pages/Profile.jsx - User Profile Page
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import api from '../services/api';
 
 const Profile = () => {
   const { user, login, token } = useContext(AuthContext);
-  const [form, setForm] = useState({ name: user?.name || '', phone: user?.phone || '', organization: user?.organization || '', bio: user?.bio || '' });
+  const [form, setForm] = useState({ name: user?.name || '', phone: '', organization: '', bio: '' });
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // ✅ Fixed: Fetch full profile from /auth/me on mount so phone/org/bio
+  // are hydrated from the database (they are NOT stored in the JWT token)
+  useEffect(() => {
+    api.get('/auth/me')
+      .then(({ data }) => {
+        setForm({
+          name: data.name || '',
+          phone: data.phone || '',
+          organization: data.organization || '',
+          bio: data.bio || '',
+        });
+      })
+      .catch(() => {}); // silently fail if offline
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault(); setLoading(true); setError(''); setSuccess('');

@@ -30,6 +30,8 @@ export const createEvent = async (req, res) => {
     const event = await Event.create(req.body);
     res.status(201).json(event);
   } catch (error) {
+    // ✅ Fixed: return 400 for validation errors (e.g. invalid status enum)
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
     res.status(500).json({ message: error.message });
   }
 };
@@ -37,10 +39,12 @@ export const createEvent = async (req, res) => {
 // PUT /api/events/:id - Update an event (admin only)
 export const updateEvent = async (req, res) => {
   try {
-    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // ✅ Fixed: runValidators ensures enum/type validation runs on update too
+    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!event) return res.status(404).json({ message: 'Event not found' });
     res.json(event);
   } catch (error) {
+    if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
     res.status(500).json({ message: error.message });
   }
 };

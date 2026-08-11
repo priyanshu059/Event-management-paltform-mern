@@ -10,21 +10,44 @@ const QUICK_ACTIONS = [
   { label: '⏰ Set Reminder', msg: 'Remind me about the next event 1 hour before' },
 ];
 
-const formatMessage = (text) => {
-  if (!text) return '';
-  // Bold: **text** or *text*
-  let formatted = text
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.*?)\*/g, '<strong>$1</strong>');
-  // Bullet lines
-  const lines = formatted.split('\n');
-  const hasBullets = lines.some(l => l.trim().startsWith('•') || l.trim().startsWith('-'));
-  if (hasBullets) {
-    return '<ul class="list-disc pl-4 space-y-1">' +
-      lines.filter(l => l.trim()).map(l => `<li>${l.replace(/^[•\-]\s*/, '')}</li>`).join('') +
-      '</ul>';
-  }
-  return formatted.replace(/\n/g, '<br/>');
+// ✅ Fixed: Safe renderer — converts markdown to React elements WITHOUT dangerouslySetInnerHTML
+// Previously used dangerouslySetInnerHTML which allowed <img onerror=...> to steal JWTs
+const SafeMessage = ({ text }) => {
+  if (!text) return null;
+
+  // Process line by line into React elements
+  const lines = text.split('\n');
+  const elements = [];
+
+  lines.forEach((line, i) => {
+    // Detect bullet points
+    if (line.trim().startsWith('• ') || line.trim().startsWith('- ')) {
+      const content = line.replace(/^[•\-]\s*/, '');
+      elements.push(
+        <li key={i} className="ml-4 list-disc">
+          {renderBold(content)}
+        </li>
+      );
+    } else if (line.trim()) {
+      elements.push(<span key={i}>{renderBold(line)}<br /></span>);
+    }
+  });
+
+  return <>{elements}</>;
+};
+
+// Convert **bold** and *bold* to <strong> tags safely
+const renderBold = (text) => {
+  const parts = text.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={i}>{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*')) {
+      return <strong key={i}>{part.slice(1, -1)}</strong>;
+    }
+    return part;
+  });
 };
 
 const Assistant = () => {
@@ -164,9 +187,7 @@ const Assistant = () => {
                       ? 'bg-purple-600 text-white rounded-br-sm'
                       : 'bg-gray-800 text-gray-200 rounded-bl-sm'
                   }`}>
-                    {isUser ? msg.text : (
-                      <span dangerouslySetInnerHTML={{ __html: formatMessage(msg.text) }} />
-                    )}
+                    {isUser ? msg.text : <SafeMessage text={msg.text} />}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-gray-600 text-xs">{msg.time}</span>

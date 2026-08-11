@@ -46,6 +46,26 @@ const eventSchema = new mongoose.Schema({
   },
 
   // Current status of the event
+  // Category of the event (e.g. "Technology", "Workshop")
+  category: {
+    type: String,
+    default: '',
+  },
+
+  // Ticket price (0 = Free)
+  price: {
+    type: Number,
+    default: 0,
+  },
+
+  // Optional link to a Venue document
+  venue: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Venue',
+    default: null,
+  },
+
+  // Current status of the event
   status: {
     type: String,
     enum: ['upcoming', 'ongoing', 'completed', 'cancelled'],

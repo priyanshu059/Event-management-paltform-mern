@@ -13,9 +13,13 @@ const AdminRegistrations = () => {
   useEffect(() => { fetch(); }, []);
 
   const handleCheckin = async (id) => {
-    await api.patch(`/registrations/${id}/checkin`);
-    setMessage('Check-in status updated');
-    fetch();
+    try {
+      await api.patch(`/registrations/${id}/checkin`);
+      setMessage('Check-in status updated');
+      fetch();
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Check-in failed.');
+    }
   };
 
   return (

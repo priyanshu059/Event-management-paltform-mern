@@ -176,7 +176,7 @@ const UserRegistrations = () => {
 
         {/* Actions */}
         <div className="flex gap-3 mt-4">
-          <Link to="/user/register" className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
+          <Link to="/events" className="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
             + Register for New Event
           </Link>
           <Link to="/events" className="border border-gray-600 hover:border-gray-400 text-gray-300 hover:text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">

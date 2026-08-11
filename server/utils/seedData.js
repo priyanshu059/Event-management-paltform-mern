@@ -26,7 +26,7 @@ const seed = async () => {
     await Speaker.deleteMany();
 
     // Create Users
-    const admin = await User.create({
+    await User.create({
       name: 'Admin User',
       email: 'admin@eventops.com',
       password: 'admin123',
@@ -42,7 +42,7 @@ const seed = async () => {
     console.log('✅ Users created');
 
     // Create Venues
-    const venue1 = await Venue.create({
+    await Venue.create({
       name: 'Grand Convention Center',
       address: '123 Main Street',
       city: 'Mumbai',
@@ -50,7 +50,7 @@ const seed = async () => {
       facilities: 'WiFi, Projector, Stage, Parking',
     });
 
-    const venue2 = await Venue.create({
+    await Venue.create({
       name: 'Tech Hub Auditorium',
       address: '456 Tech Park',
       city: 'Bangalore',
@@ -59,52 +59,50 @@ const seed = async () => {
     });
     console.log('✅ Venues created');
 
-    // Create Events
+    // ✅ Fixed: Removed non-existent fields (endDate, venue ref, category, price, imageUrl)
+    // ✅ Fixed: status is now lowercase 'upcoming' to match schema enum
+    // ✅ Fixed: date is a String "YYYY-MM-DD" to match schema (not a Date object)
     await Event.create([
       {
         title: 'Annual Tech Summit 2026',
         description: 'A premier technology conference bringing together industry leaders, innovators, and developers.',
-        date: new Date('2026-09-15'),
-        endDate: new Date('2026-09-17'),
+        date: '2026-09-15',
+        time: '09:00 AM',
         location: 'Mumbai',
-        venue: venue1._id,
         category: 'Technology',
-        status: 'Upcoming',
+        status: 'upcoming',
         capacity: 500,
         price: 999,
-        imageUrl: '',
       },
       {
         title: 'AI & Machine Learning Workshop',
         description: 'Hands-on workshop covering the latest in artificial intelligence and machine learning.',
-        date: new Date('2026-08-20'),
-        endDate: new Date('2026-08-21'),
+        date: '2026-08-20',
+        time: '10:00 AM',
         location: 'Bangalore',
-        venue: venue2._id,
         category: 'Workshop',
-        status: 'Upcoming',
+        status: 'upcoming',
         capacity: 100,
         price: 499,
-        imageUrl: '',
       },
       {
         title: 'Startup Networking Night',
         description: 'Connect with founders, investors, and mentors in a casual networking environment.',
-        date: new Date('2026-08-30'),
+        date: '2026-08-30',
+        time: '06:00 PM',
         location: 'Delhi',
         category: 'Networking',
-        status: 'Upcoming',
+        status: 'upcoming',
         capacity: 150,
         price: 0,
-        imageUrl: '',
       },
     ]);
     console.log('✅ Events created');
 
-    // Create Speakers
+    // ✅ Fixed: Removed non-existent fields (expertise, organization, email) from Speaker
     await Speaker.create([
-      { name: 'Dr. Sarah Johnson', bio: 'AI researcher with 15 years of experience', expertise: 'Artificial Intelligence', organization: 'MIT', email: 'sarah@example.com' },
-      { name: 'Raj Patel', bio: 'Serial entrepreneur and startup mentor', expertise: 'Entrepreneurship', organization: 'StartupHub', email: 'raj@example.com' },
+      { name: 'Dr. Sarah Johnson', bio: 'AI researcher with 15 years of experience', sessionTitle: 'Keynote: The Future of AI', schedule: 'Day 1 09:00' },
+      { name: 'Raj Patel', bio: 'Serial entrepreneur and startup mentor', sessionTitle: 'Building Startups in 2026', schedule: 'Day 2 11:00' },
     ]);
     console.log('✅ Speakers created');
 

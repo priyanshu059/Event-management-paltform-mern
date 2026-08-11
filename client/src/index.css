@@ -6,13 +6,12 @@
    2. Adds global custom styles matching the original design
    3. Uses Bootstrap's color scheme translated to CSS variables
    ============================================================ */
+/* ---- Google Fonts (must be first — @import must precede all other CSS statements) ---- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* ---- Google Fonts (matching original's clean look) ---- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 /* ---- CSS Variables (colors from original Bootstrap theme) ---- */
 :root {

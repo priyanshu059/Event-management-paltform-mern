@@ -70,16 +70,18 @@ export const getMe = async (req, res) => {
   }
 };
 
-// GET /api/auth/profile - Update current user's profile
+// PUT /api/auth/profile - Update current user's profile
 export const updateProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    user.name = req.body.name || user.name;
-    user.phone = req.body.phone || user.phone;
-    user.organization = req.body.organization || user.organization;
-    user.bio = req.body.bio || user.bio;
+    // ✅ Fixed: use !== undefined so empty string ("") clears the field
+    // The old `req.body.name || user.name` pattern ignores empty strings
+    if (req.body.name !== undefined) user.name = req.body.name;
+    if (req.body.phone !== undefined) user.phone = req.body.phone;
+    if (req.body.organization !== undefined) user.organization = req.body.organization;
+    if (req.body.bio !== undefined) user.bio = req.body.bio;
 
     // Only update password if provided
     if (req.body.password) {

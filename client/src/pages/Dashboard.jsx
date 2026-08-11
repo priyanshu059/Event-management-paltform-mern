@@ -59,7 +59,7 @@ const Dashboard = () => {
                     <p className="text-white font-medium">{reg.event?.title}</p>
                     <p className="text-gray-400 text-sm">{formatDate(reg.event?.date)} · {reg.event?.location}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${reg.status === 'Confirmed' ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}`}>
+                  <span className={`text-xs px-2 py-1 rounded-full ${reg.status === 'registered' ? 'bg-green-900 text-green-300' : 'bg-yellow-900 text-yellow-300'}`}>
                     {reg.status || 'Pending'}
                   </span>
                 </div>

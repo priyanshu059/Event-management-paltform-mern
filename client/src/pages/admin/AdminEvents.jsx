@@ -16,9 +16,13 @@ const AdminEvents = () => {
 
   const handleDelete = async (id, title) => {
     if (!window.confirm(`Delete event "${title}"?`)) return;
-    await api.delete(`/events/${id}`);
-    setMessage('Event deleted successfully');
-    fetchEvents();
+    try {
+      await api.delete(`/events/${id}`);
+      setMessage('Event deleted successfully');
+      fetchEvents();
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Failed to delete event.');
+    }
   };
 
   return (
