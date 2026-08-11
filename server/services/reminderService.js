@@ -1,35 +1,30 @@
 // ============================================================
 // server/services/reminderService.js - Automated Reminder Scheduler
-// Replaces Flask APScheduler — runs every minute like the original
 // ============================================================
 import schedule from 'node-schedule';
 import Reminder from '../models/Reminder.js';
 import Notification from '../models/Notification.js';
 
-let isRunning = false;
-
 export const startReminderScheduler = () => {
   console.log('⏰ Reminder service started — checking every minute');
 
-  // Run every minute (matches Flask APScheduler 60s interval)
+  // Run every minute
   schedule.scheduleJob('* * * * *', async () => {
-    if (isRunning) return; // Prevent overlap
-    isRunning = true;
-
     try {
       const now = new Date();
-      const dueReminders = await Reminder.find({
-        reminderTime: { $lte: now },
-        sent: false,
-      }).populate('user', 'name email').populate('event', 'title date');
 
-      if (dueReminders.length > 0) {
-        console.log(`⏰ Processing ${dueReminders.length} due reminder(s)…`);
-      }
+      // ✅ Fix 8: Atomic claim — findOneAndUpdate with sent:false → sent:true in a single DB operation.
+      // If two server instances run simultaneously, only ONE will get each reminder because MongoDB's
+      // atomic update ensures the second instance finds 'sent' already true and skips it.
+      let processed = 0;
+      let reminder;
+      while ((reminder = await Reminder.findOneAndUpdate(
+        { reminderTime: { $lte: now }, sent: false },
+        { sent: true },
+        { new: false } // return the OLD document (before update) to get the original data
+      ).populate('user', 'name email').populate('event', 'title date')) !== null) {
 
-      for (const reminder of dueReminders) {
         try {
-          // Create in-app notification
           await Notification.create({
             user: reminder.user._id,
             title: '⏰ Event Reminder',
@@ -38,19 +33,21 @@ export const startReminderScheduler = () => {
             isRead: false,
           });
 
-          // Mark reminder as sent
-          reminder.sent = true;
-          await reminder.save();
-
-          console.log(`✅ Reminder sent to user ${reminder.user?.name || reminder.user}`);
+          processed++;
+          console.log(`✅ Reminder sent to ${reminder.user?.name || reminder.user}`);
         } catch (innerError) {
-          console.error(`❌ Failed to process reminder ${reminder._id}:`, innerError.message);
+          // If notification creation fails, revert sent flag so it will be retried next minute
+          await Reminder.findByIdAndUpdate(reminder._id, { sent: false });
+          console.error(`❌ Failed to notify for reminder ${reminder._id}:`, innerError.message);
         }
       }
+
+      if (processed > 0) {
+        console.log(`⏰ Processed ${processed} reminder(s)`);
+      }
+
     } catch (error) {
       console.error('❌ Reminder service error:', error.message);
-    } finally {
-      isRunning = false;
     }
   });
 };

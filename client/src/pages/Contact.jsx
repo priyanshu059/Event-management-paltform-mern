@@ -1,5 +1,6 @@
 // src/pages/Contact.jsx — Contact Us page
 import { useState } from 'react';
+import api from '../services/api';
 
 const CONTACT_INFO = [
   { icon: '📍', label: 'Address', value: '123 AI Boulevard, San Francisco, CA 94105' },
@@ -20,16 +21,24 @@ const Contact = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const [error, setError] = useState('');
+
   const handleChange = e => setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    // Simulate submission (no backend route needed for contact)
-    await new Promise(r => setTimeout(r, 1000));
-    setSubmitted(true);
-    setSubmitting(false);
-    setForm({ name: '', email: '', subject: '', message: '' });
+    setError('');
+    try {
+      // ✅ Fix 15: Real API call — message is saved to MongoDB
+      await api.post('/contact', form);
+      setSubmitted(true);
+      setForm({ name: '', email: '', subject: '', message: '' });
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -54,6 +63,10 @@ const Contact = () => {
             <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8">
               <h2 className="text-white font-bold text-xl mb-1">✉️ Send a Message</h2>
               <p className="text-gray-400 text-sm mb-6">Fill in the form and we'll respond within 24 hours.</p>
+
+              {error && (
+                <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-xl mb-4 text-sm">{error}</div>
+              )}
 
               {submitted ? (
                 <div className="text-center py-10">

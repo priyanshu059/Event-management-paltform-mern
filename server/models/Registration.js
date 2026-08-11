@@ -1,10 +1,6 @@
 // ============================================================
 // models/Registration.js - Registration Model
 // ============================================================
-// When a user registers for an event, a Registration document
-// is created that links a User and an Event together.
-// ============================================================
-
 import mongoose from 'mongoose';
 
 const registrationSchema = new mongoose.Schema({
@@ -51,6 +47,10 @@ const registrationSchema = new mongoose.Schema({
 }, {
   timestamps: true,
 });
+
+// ✅ Fix 4: Compound unique index prevents race-condition duplicate registrations at the DB level.
+// Even if two requests pass the application-layer check simultaneously, MongoDB will reject the second.
+registrationSchema.index({ user: 1, event: 1 }, { unique: true });
 
 const Registration = mongoose.model('Registration', registrationSchema);
 export default Registration;

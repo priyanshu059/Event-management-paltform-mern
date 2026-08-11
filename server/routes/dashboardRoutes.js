@@ -2,7 +2,11 @@
 import express from 'express';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { protect } from '../middleware/authMiddleware.js';
-const router = express.Router();
-router.get('/stats', protect, getDashboardStats);
-export default router;
+import { adminOnly } from '../middleware/roleMiddleware.js';
 
+const router = express.Router();
+
+// ✅ Fix 2: added adminOnly — regular users cannot read registration stats/emails
+router.get('/stats', protect, adminOnly, getDashboardStats);
+
+export default router;

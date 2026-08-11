@@ -4,20 +4,36 @@
 import Registration from '../models/Registration.js';
 import Event from '../models/Event.js';
 
+// ✅ Fix 10: Central error handler — avoids leaking raw DB errors
+const handleError = (res, error) => {
+  if (error.name === 'CastError') return res.status(400).json({ message: 'Invalid ID format' });
+  if (error.name === 'ValidationError') return res.status(400).json({ message: error.message });
+  if (error.code === 11000) return res.status(400).json({ message: 'Already registered for this event' });
+  return res.status(500).json({ message: 'Server error' });
+};
+
 // POST /api/registrations - Register current user for an event
 export const registerForEvent = async (req, res) => {
   try {
-    const { eventId, ticketType } = req.body;   // ✅ Fixed: read ticketType from body
+    const { eventId, ticketType } = req.body;
 
-    // Check if already registered
+    // Check if already registered (application-level, DB unique index is the real guard)
     const existing = await Registration.findOne({ event: eventId, user: req.user._id });
     if (existing) return res.status(400).json({ message: 'Already registered for this event' });
 
-    // ✅ Fixed: Capacity enforcement — check how many are already registered
     const event = await Event.findById(eventId);
     if (!event) return res.status(404).json({ message: 'Event not found' });
 
-    const registrationCount = await Registration.countDocuments({ event: eventId });
+    // ✅ Fix 3 / Fix 5: Reject registrations for non-upcoming events
+    if (event.status === 'cancelled') {
+      return res.status(400).json({ message: 'This event has been cancelled' });
+    }
+    if (event.status === 'completed') {
+      return res.status(400).json({ message: 'This event has already ended' });
+    }
+
+    // Capacity enforcement
+    const registrationCount = await Registration.countDocuments({ event: eventId, status: 'registered' });
     if (event.capacity && registrationCount >= event.capacity) {
       return res.status(400).json({ message: 'This event is fully booked' });
     }
@@ -25,12 +41,12 @@ export const registerForEvent = async (req, res) => {
     const registration = await Registration.create({
       event: eventId,
       user: req.user._id,
-      ticketType: ticketType || 'Standard',    // ✅ Fixed: save chosen ticket type
+      ticketType: ticketType || 'Standard',
     });
 
     res.status(201).json(registration);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);  // catches duplicate key (11000) from the unique index
   }
 };
 
@@ -41,7 +57,7 @@ export const getMyRegistrations = async (req, res) => {
       .populate('event', 'title date location status');
     res.json(registrations);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
@@ -53,7 +69,7 @@ export const getAllRegistrations = async (req, res) => {
       .populate('user', 'name email');
     res.json(registrations);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
@@ -63,17 +79,27 @@ export const updateRegistration = async (req, res) => {
     const reg = await Registration.findById(req.params.id);
     if (!reg) return res.status(404).json({ message: 'Registration not found' });
 
-    // ✅ Fixed: IDOR — only owner or admin can update
+    // Ownership check
     const isOwner = reg.user.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: 'Not authorized to update this registration' });
     }
 
-    const updated = await Registration.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    // ✅ Fix 3: Strict allow-list — owners can ONLY change ticketType.
+    // Admins can also change status. Nobody can change event, user, or checkedIn via this route.
+    const allowedUpdate = {};
+    if (req.body.ticketType !== undefined) allowedUpdate.ticketType = req.body.ticketType;
+    if (isAdmin && req.body.status !== undefined) allowedUpdate.status = req.body.status;
+
+    const updated = await Registration.findByIdAndUpdate(
+      req.params.id,
+      allowedUpdate,
+      { new: true, runValidators: true }
+    );
     res.json(updated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
@@ -83,7 +109,6 @@ export const deleteRegistration = async (req, res) => {
     const reg = await Registration.findById(req.params.id);
     if (!reg) return res.status(404).json({ message: 'Registration not found' });
 
-    // ✅ Fixed: IDOR — only owner or admin can delete
     const isOwner = reg.user.toString() === req.user._id.toString();
     const isAdmin = req.user.role === 'admin';
     if (!isOwner && !isAdmin) {
@@ -93,7 +118,7 @@ export const deleteRegistration = async (req, res) => {
     await Registration.findByIdAndDelete(req.params.id);
     res.json({ message: 'Registration cancelled' });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };
 
@@ -102,10 +127,10 @@ export const checkinRegistration = async (req, res) => {
   try {
     const reg = await Registration.findById(req.params.id);
     if (!reg) return res.status(404).json({ message: 'Registration not found' });
-    reg.checkedIn = !reg.checkedIn;   // toggles true ↔ false
+    reg.checkedIn = !reg.checkedIn;
     await reg.save();
     res.json(reg);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    handleError(res, error);
   }
 };

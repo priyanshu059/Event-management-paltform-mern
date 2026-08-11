@@ -60,10 +60,12 @@ function App() {
               {/* Protected Routes (login required) */}
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="/events" element={<ProtectedRoute><BrowseEvents /></ProtectedRoute>} />
-              <Route path="/events/:id" element={<ProtectedRoute><EventDetail /></ProtectedRoute>} />
+              {/* ✅ Fix 14: /events and /events/:id are now public — no login required to browse events */}
+              <Route path="/events" element={<BrowseEvents />} />
+              <Route path="/events/:id" element={<EventDetail />} />
               <Route path="/events/:id/register" element={<ProtectedRoute><EventRegister /></ProtectedRoute>} />
-              <Route path="/user/register" element={<ProtectedRoute><UserRegisterEvent /></ProtectedRoute>} />
+              {/* ✅ Fix 13: added :id param so useParams() gets the event ID, not undefined */}
+              <Route path="/user/register/:id" element={<ProtectedRoute><UserRegisterEvent /></ProtectedRoute>} />
               <Route path="/my-registrations" element={<ProtectedRoute><UserRegistrations /></ProtectedRoute>} />
               <Route path="/feedback/:eventId" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
               <Route path="/my-feedback" element={<ProtectedRoute><FeedbackList /></ProtectedRoute>} />
