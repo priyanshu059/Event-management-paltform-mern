@@ -9,7 +9,8 @@ import axios from 'axios';
 
 // Create an axios instance pointing to our backend
 const api = axios.create({
-  baseURL: '/api', // Vite proxy forwards this to http://localhost:5000/api
+  // Use VITE_API_URL from environment (for Vercel), or fallback to local proxy path
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1', 
 });
 
 // --- Request Interceptor ---
