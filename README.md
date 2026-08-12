@@ -79,63 +79,7 @@ eventmanagement-mern/
 
 ---
 
-## 🚀 Getting Started
 
-### Prerequisites
-
-Make sure you have the following installed on your local machine:
-- **Node.js** (v18 or higher recommended)
-- **npm** or **yarn**
-- **MongoDB** (Local instance or MongoDB Atlas URI)
-
-### 1. Clone the repository
-
-```bash
-git clone https://github.com/yourusername/eventmanagement-mern.git
-cd eventmanagement-mern
-```
-
-### 2. Install Dependencies
-
-Install dependencies for the root, client, and server simultaneously.
-
-```bash
-npm install          # Installs concurrently in the root
-cd client && npm install
-cd ../server && npm install
-cd ..
-```
-
-### 3. Environment Variables
-
-Create a `.env` file inside the `server/` directory and add the following variables:
-
-```env
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-GEMINI_API_KEY=your_google_gemini_api_key
-```
-
-Create a `.env` file inside the `client/` directory (if needed for Vite):
-
-```env
-VITE_API_URL=http://localhost:5000
-```
-
-### 4. Run the Application
-
-You can start both the frontend and backend servers at the same time using the root script:
-
-```bash
-# From the root directory (eventmanagement-mern)
-npm run dev
-```
-
-- The **Client** will start on `http://localhost:5173`
-- The **Server** will start on `http://localhost:5000`
-
----
 
 ## 📡 API Routes Overview
 
